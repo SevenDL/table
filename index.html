@@ -14,23 +14,29 @@
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
             background: linear-gradient(135deg, #0f4c75 0%, #3282b8 50%, #0f3460 100%);
-            min-height: 100vh;
-            padding: 20px;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
             background: rgba(15, 76, 117, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
-            border: 1px solid rgba(50, 130, 184, 0.3);
+            border: none;
+            display: flex;
+            flex-direction: column;
         }
 
         .filter-container {
-            padding: 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid rgba(50, 130, 184, 0.3);
+            flex-shrink: 0;
         }
 
         .filter-label {
@@ -70,9 +76,33 @@
         }
 
         .table-container {
-            overflow-x: auto;
-            max-height: 80vh;
+            overflow: auto;
+            flex: 1;
             position: relative;
+        }
+
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: rgba(15, 76, 117, 0.3);
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: rgba(50, 130, 184, 0.6);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(50, 130, 184, 0.8);
+        }
+
+        /* 隐藏滚动条，但保持滚动功能 */
+        .table-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(50, 130, 184, 0.6) rgba(15, 76, 117, 0.3);
         }
 
         table {
@@ -179,10 +209,6 @@
         }
 
         @media (max-width: 1200px) {
-            .table-container {
-                overflow-x: auto;
-            }
-            
             table {
                 table-layout: auto;
                 min-width: 1200px;
@@ -198,9 +224,8 @@
         }
 
         @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 10px;
+            .filter-container {
+                padding: 10px 15px;
             }
             
             th, td {
