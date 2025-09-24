@@ -1,84 +1,63 @@
-# 城市分类API服务
+# 生产数据表格系统
 
-一个简单的Node.js API服务，提供城市数据查询功能。
+一个现代化的生产异常数据管理表格系统，支持智能分类筛选和瀑布流分页。
 
-## 快速开始
+## 功能特性
 
-1. 安装依赖：
+- 📊 **智能分类筛选**: 自动将生产异常分为设备异常、物料异常、工艺异常、系统异常四大类
+- 🌊 **瀑布流分页**: 每页显示10条记录，滚动自动加载更多数据
+- 🎨 **现代化UI设计**: 深蓝绿配色方案，响应式布局
+- 📱 **移动端适配**: 支持各种屏幕尺寸，无横向滚动条
+- ⚡ **高性能**: 纯前端实现，无需后端服务器
+
+## 在线访问
+
+访问地址：[https://yourusername.github.io/production-data-table/](https://yourusername.github.io/production-data-table/)
+
+## 本地运行
+
+1. 克隆仓库
 ```bash
-npm install
+git clone https://github.com/yourusername/production-data-table.git
+cd production-data-table
 ```
 
-2. 启动服务：
-```bash
-npm start
-```
+2. 直接在浏览器中打开 `index.html` 文件
 
-服务将在 http://localhost:1100 启动
+## 技术栈
 
-## API接口
+- HTML5
+- CSS3 (Flexbox, Grid, 渐变背景)
+- JavaScript (ES6+)
+- 响应式设计
 
-### 获取所有城市
-```
-GET /api/cities?cc=your_value
-```
+## 数据字段
 
-**参数：**
-- `cc` (必需): 客户端标识参数
+表格包含以下14个字段：
+- 生产区
+- 线体
+- 日期
+- 流程节点
+- 问题工位
+- 问题明细
+- 原因分析
+- 整改措施
+- 机型
+- 问题分类
+- 不良台数
+- 责任线长
+- 复查结果
+- 处理人
 
-**响应示例：**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "1000000",
-      "content": "全部分类"
-    },
-    {
-      "id": "1000001",
-      "content": "北京"
-    }
-  ],
-  "cc": "your_value",
-  "count": 7
-}
-```
+## 智能分类规则
 
-### 获取指定城市
-```
-GET /api/cities/:id?cc=your_value
-```
+系统根据事件描述和根因分析自动分类：
 
-**参数：**
-- `id` (路径参数): 城市ID
-- `cc` (必需): 客户端标识参数
+- **设备异常**: 包含设备、机器人、点胶机、卡合机等关键词
+- **物料异常**: 包含面板、背板、物料、异物等关键词
+- **工艺异常**: 包含工艺、操作、涂胶、清胶等关键词
+- **系统异常**: 包含系统、扫码、IT、软件等关键词
 
-**响应示例：**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "1000001",
-    "content": "北京"
-  },
-  "cc": "your_value"
-}
-```
+## 许可证
 
-### 健康检查
-```
-GET /health
-```
-
-## 测试示例
-
-```bash
-# 获取所有城市
-curl "http://localhost:1100/api/cities?cc=test"
-
-# 获取北京信息
-curl "http://localhost:1100/api/cities/1000001?cc=test"
-
-# 健康检查
-curl "http://localhost:1100/health"
+MIT License

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产数据表格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 80vh;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #e0e0e0;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+
+        td {
+            padding: 12px 10px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+            background: white;
+            transition: background-color 0.3s ease;
+        }
+
+        tr:nth-child(even) td {
+            background: #f8f9fa;
+        }
+
+        tr:hover td {
+            background: #e3f2fd;
+            transform: scale(1.01);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .problem-detail {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .problem-detail:hover {
+            white-space: normal;
+            overflow: visible;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 5;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+                font-size: 12px;
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>生产区</th>
+                        <th>线体</th>
+                        <th>日期</th>
+                        <th>流程节点</th>
+                        <th>问题工位</th>
+                        <th>问题明细</th>
+                        <th>原因分析</th>
+                        <th>整改措施</th>
+                        <th>机型</th>
+                        <th>问题分类</th>
+                        <th>不良台数</th>
+                        <th>责任线长</th>
+                        <th>复查结果</th>
+                        <th>处理人</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        <div id="loading" class="loading" style="display: none;">正在加载更多数据...</div>
+    </div>
+
+    <script>
+        let data = [];
+        let currentPage = 0;
+        const pageSize = 10;
+        let isLoading = false;
+
+        // 直接嵌入完整数据
+        function loadData() {
+            data = [
+	{
+		"PREV_PREV_EVENT_DESC": null,
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": null,
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-23",
+		"堆积列S": "拖期",
+		"关闭周期": 3,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.6,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639866330882048",
+		"责任人": "zhangyiyuan,dongxiaojie1,hanlianfeng",
+		"未闭环": 0,
+		"责任部门": "装备部",
+		"当前节点处理人": "熊建伟",
+		"机型": null,
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "底涂剂设备机器人配电柜内部DCQ1006模块坏；密封件贴附设备机器人5轴电机抖动严重造成报警。两台机器人故障问题已联系ABB机器人售后进行分析，待售后排查原因回复。",
+		"已回复已闭环": 1,
+		"事件描述": "T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6",
+		"临时对策": "底涂剂设备和密封件贴附设备机器人坏，暂时人工涂底涂剂和贴天侧密封件",
+		"对策录入时间": "2025-09-24T00:41:29.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-26",
+		"未闭环SS": 1,
+		"回复周期": 1.36,
+		"对策填写人": "高迎山",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T56",
+		"车间名称": "72生产区",
+		"长期对策": "两台机器人故障问题已联系ABB机器人售后进行分析，待售后排查原因回复。",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "接受变更通知为随工单消化，此次生产产品/工单BOM背板料号为20110751，实际投料为425858，落实为采购为消化库存，但未接收到相应通知",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:40:27.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.36,
+		"对策填写人": "王琛",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "维护对应替代料关系后，仍无法扫码过站，初步分析为IT原因， 待落实。",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:40:27.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.36,
+		"对策填写人": "王琛",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "接受变更通知为随工单消化，此次生产产品/工单BOM背板料号为20110751，实际投料为425858，落实为采购为消化库存，但未接收到相应通知",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:54:28.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.37,
+		"对策填写人": "王键",
+		"进行中S": 1,
+		"重复问题数S": 1,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": null,
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "维护对应替代料关系后，仍无法扫码过站，初步分析为IT原因， 待落实。",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:54:28.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.37,
+		"对策填写人": "王键",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "任务分配",
+		"当前节点状态": 10,
+		"临时对策完成时间": null,
+		"堆积列S": "未回复",
+		"关闭周期": null,
+		"拖期S": 0,
+		"发生日期": "2025-09-23 08:44:54",
+		"影响时间": null,
+		"堆积列": "未回复",
+		"未回复": 1,
+		"已回复S": 0,
+		"发生ID": "Underproduction202509241970650869948776448",
+		"责任人": "jinfeng3",
+		"未闭环": 1,
+		"责任部门": "品质保证部",
+		"当前节点处理人": "靳锋",
+		"机型": null,
+		"状态已回复未回复": "andonEmplopyHandle",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": null,
+		"已回复已闭环": 0,
+		"事件描述": "C6线使用京东方面板，线体分别在9/16.9/18.9/23连续三天持续反馈屏内泡沫异物问题，均未得到有效改善",
+		"临时对策": null,
+		"对策录入时间": null,
+		"未回复S": 1,
+		"长期对策完成时间": null,
+		"未闭环SS": 1,
+		"回复周期": null,
+		"对策填写人": null,
+		"进行中S": 0,
+		"重复问题数S": 0,
+		"线体": null,
+		"车间名称": null,
+		"长期对策": null,
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "CK5生产商显海运点胶机、卡合机设备异常导致线体停产影响0.8h",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "CK5生产商显海运点胶机、卡合机设备异常导致线体停产影响0.8h",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:21:11",
+		"堆积列S": "拖期",
+		"关闭周期": 1.03,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 08:47:21",
+		"影响时间": null,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970651373831487488",
+		"责任人": "dongxiaojie1",
+		"未闭环": 0,
+		"责任部门": "装备部",
+		"当前节点处理人": "韩连峰",
+		"机型": null,
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "卡合机：设备运行时的振动导致光电位置歪斜，光电歪斜后与设备其他部件发生碰撞，造成极限光电外壳损坏，触发地侧对中正极限异常报警，影响设备对中功能。",
+		"已回复已闭环": 1,
+		"事件描述": "CK5生产商显海运点胶机、卡合机设备异常导致线体停产影响0.8h",
+		"临时对策": "卡合机：对歪斜的极限光电进行位置校准，恢复设备运行。",
+		"对策录入时间": "2025-09-24T00:50:31.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:25:51",
+		"未闭环SS": 1,
+		"回复周期": 1,
+		"对策填写人": "徐斌",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": null,
+		"车间名称": null,
+		"长期对策": "卡合机：更换损坏的极限光电，更换后重新校准位置并紧固螺丝",
+		"重复问题数": 0
+	}
+            ];
+            
+            // 初始加载第一页
+            loadMoreData();
+        }
+
+        // 字段映射
+        function mapFields(item) {
+            // 提取问题工位
+            function extractWorkstation(description) {
+                if (!description) return '-';
+                const matches = description.match(/(面板卡和|密封件|点胶机|卡合机|背板|模组)/);
+                return matches ? matches[1] : '-';
+            }
+
+            // 提取问题分类
+            function extractProblemType(description, rootCause) {
+                if (!description && !rootCause) return '-';
+                const text = (description || '') + ' ' + (rootCause || '');
+                if (text.includes('设备') || text.includes('机器人') || text.includes('光电')) return '设备异常';
+                if (text.includes('扫码') || text.includes('IT') || text.includes('系统')) return '系统问题';
+                if (text.includes('面板') || text.includes('泡沫') || text.includes('异物')) return '品质问题';
+                if (text.includes('料号') || text.includes('BOM') || text.includes('库存')) return '物料问题';
+                return '其他';
+            }
+
+            return {
+                生产区: item.车间名称 || '-',
+                线体: item.线体 || '-',
+                日期: item.发生日期 ? item.发生日期.split(' ')[0] : '-',
+                流程节点: item.当前节点 || '-',
+                问题工位: extractWorkstation(item.事件描述),
+                问题明细: item.事件描述 || '-',
+                原因分析: item.根因分析 || '-',
+                整改措施: item.长期对策 || item.临时对策 || '-',
+                机型: item.机型 || '-',
+                问题分类: extractProblemType(item.事件描述, item.根因分析),
+                不良台数: '-',
+                责任线长: item.责任人 ? item.责任人.split(',')[0] : '-',
+                复查结果: '-',
+                处理人: item.当前节点处理人 || item.对策填写人 || '-'
+            };
+        }
+
+        // 渲染表格行
+        function renderTableRows(startIndex, endIndex) {
+            const tbody = document.getElementById('tableBody');
+            
+            for (let i = startIndex; i < endIndex && i < data.length; i++) {
+                const mappedItem = mapFields(data[i]);
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${mappedItem.生产区}</td>
+                    <td>${mappedItem.线体}</td>
+                    <td>${mappedItem.日期}</td>
+                    <td><span class="status-badge status-pending">${mappedItem.流程节点}</span></td>
+                    <td>${mappedItem.问题工位}</td>
+                    <td class="problem-detail" title="${mappedItem.问题明细}">${mappedItem.问题明细}</td>
+                    <td class="problem-detail" title="${mappedItem.原因分析}">${mappedItem.原因分析}</td>
+                    <td class="problem-detail" title="${mappedItem.整改措施}">${mappedItem.整改措施}</td>
+                    <td>${mappedItem.机型}</td>
+                    <td><span class="status-badge status-approved">${mappedItem.问题分类}</span></td>
+                    <td>${mappedItem.不良台数}</td>
+                    <td>${mappedItem.责任线长}</td>
+                    <td>${mappedItem.复查结果}</td>
+                    <td>${mappedItem.处理人}</td>
+                `;
+                
+                tbody.appendChild(row);
+            }
+        }
+
+        // 加载更多数据
+        function loadMoreData() {
+            if (isLoading || currentPage * pageSize >= data.length) return;
+            
+            isLoading = true;
+            document.getElementById('loading').style.display = 'block';
+            
+            setTimeout(() => {
+                const startIndex = currentPage * pageSize;
+                const endIndex = startIndex + pageSize;
+                
+                renderTableRows(startIndex, endIndex);
+                currentPage++;
+                
+                isLoading = false;
+                document.getElementById('loading').style.display = 'none';
+                
+                // 如果已经加载完所有数据，隐藏加载提示
+                if (currentPage * pageSize >= data.length) {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            }, 500);
+        }
+
+        // 滚动事件监听
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                loadMoreData();
+            }
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+    </script>
+</body>
+</html>

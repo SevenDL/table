@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产数据表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .loading-more {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .no-more-data {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        thead th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e6ed;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        tbody td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e6ed;
+            vertical-align: top;
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .status-active {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-pending {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-overdue {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .department-tag {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .impact-time {
+            font-weight: 600;
+            color: #d32f2f;
+        }
+
+        .description-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .description-cell:hover {
+            white-space: normal;
+            overflow: visible;
+            background-color: #fff;
+            position: relative;
+            z-index: 5;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            border-radius: 4px;
+            padding: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            thead th, tbody td {
+                padding: 8px 6px;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>生产区</th>
+                            <th>线体</th>
+                            <th>日期</th>
+                            <th>流程节点</th>
+                            <th>问题工位</th>
+                            <th>问题明细</th>
+                            <th>原因分析</th>
+                            <th>整改措施</th>
+                            <th>机型</th>
+                            <th>问题分类</th>
+                            <th>不良台数</th>
+                            <th>责任线长</th>
+                            <th>复查结果</th>
+                            <th>处理人</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="14" class="loading">正在加载数据...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 分页相关变量
+        let currentPage = 0;
+        const pageSize = 10;
+        let isLoading = false;
+        let hasMoreData = true;
+        let data = [];
+
+        // 直接嵌入完整数据
+        function loadData() {
+            data = [
+	{
+		"PREV_PREV_EVENT_DESC": null,
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": null,
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-23",
+		"堆积列S": "拖期",
+		"关闭周期": 3,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.6,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639866330882048",
+		"责任人": "zhangyiyuan,dongxiaojie1,hanlianfeng",
+		"未闭环": 0,
+		"责任部门": "装备部",
+		"当前节点处理人": "熊建伟",
+		"机型": null,
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "底涂剂设备机器人配电柜内部DCQ1006模块坏；密封件贴附设备机器人5轴电机抖动严重造成报警。两台机器人故障问题已联系ABB机器人售后进行分析，待售后排查原因回复。",
+		"已回复已闭环": 1,
+		"事件描述": "T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6",
+		"临时对策": "底涂剂设备和密封件贴附设备机器人坏，暂时人工涂底涂剂和贴天侧密封件",
+		"对策录入时间": "2025-09-24T00:41:29.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-26",
+		"未闭环SS": 1,
+		"回复周期": 1.36,
+		"对策填写人": "高迎山",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T56",
+		"车间名称": "72生产区",
+		"长期对策": "两台机器人故障问题已联系ABB机器人售后进行分析，待售后排查原因回复。",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "接受变更通知为随工单消化，此次生产产品/工单BOM背板料号为20110751，实际投料为425858，落实为采购为消化库存，但未接收到相应通知",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:40:27.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.36,
+		"对策填写人": "王琛",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "维护对应替代料关系后，仍无法扫码过站，初步分析为IT原因， 待落实。",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:40:27.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.36,
+		"对策填写人": "王琛",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "接受变更通知为随工单消化，此次生产产品/工单BOM背板料号为20110751，实际投料为425858，落实为采购为消化库存，但未接收到相应通知",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:54:28.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.37,
+		"对策填写人": "王键",
+		"进行中S": 1,
+		"重复问题数S": 1,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": null,
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6",
+		"已闭环S": 0,
+		"当前节点": "对策审批",
+		"当前节点状态": 10,
+		"临时对策完成时间": "2025-09-24 09:28:07",
+		"堆积列S": "拖期",
+		"关闭周期": 1.39,
+		"拖期S": 1,
+		"发生日期": "2025-09-23 00:00:00",
+		"影响时间": 0.33,
+		"堆积列": "已回复已闭环",
+		"未回复": 0,
+		"已回复S": 1,
+		"发生ID": "Underproduction202509241970639876363419648",
+		"责任人": "yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6",
+		"未闭环": 0,
+		"责任部门": "产品线运营中心",
+		"当前节点处理人": "王键",
+		"机型": "75A7Q",
+		"状态已回复未回复": "countermeasureApprov",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": "维护对应替代料关系后，仍无法扫码过站，初步分析为IT原因， 待落实。",
+		"已回复已闭环": 1,
+		"事件描述": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"临时对策": "调整背板为不解析下线",
+		"对策录入时间": "2025-09-24T00:54:28.000+0000",
+		"未回复S": 0,
+		"长期对策完成时间": "2025-09-24 09:28:07",
+		"未闭环SS": 1,
+		"回复周期": 1.37,
+		"对策填写人": "王键",
+		"进行中S": 1,
+		"重复问题数S": 0,
+		"线体": "T45",
+		"车间名称": "82生产区",
+		"长期对策": "待落实后补充",
+		"重复问题数": 0
+	},
+	{
+		"PREV_PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"状态": "1",
+		"已完成S": 0,
+		"PREV_EVENT_DESC": "T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33",
+		"已闭环S": 0,
+		"当前节点": "任务分配",
+		"当前节点状态": 10,
+		"临时对策完成时间": null,
+		"堆积列S": "未回复",
+		"关闭周期": null,
+		"拖期S": 0,
+		"发生日期": "2025-09-23 08:44:54",
+		"影响时间": null,
+		"堆积列": "未回复",
+		"未回复": 1,
+		"已回复S": 0,
+		"发生ID": "Underproduction202509241970650869948776448",
+		"责任人": "jinfeng3",
+		"未闭环": 1,
+		"责任部门": "品质保证部",
+		"当前节点处理人": "靳锋",
+		"机型": null,
+		"状态已回复未回复": "andonEmplopyHandle",
+		"已回复未闭环": 0,
+		"数字填充": 1,
+		"根因分析": null,
+		"已回复已闭环": 0,
+		"事件描述": "C6线使用京东方面板，线体分别在9/16.9/18.9/23连续三天持续反馈屏内泡沫异物问题，均未得到有效改善",
+		"临时对策": null,
+		"对策录入时间": null,
+		"未回复S": 1,
+		"长期对策完成时间": null,
+		"未闭环SS": 1,
+		"回复周期": null,
+		"对策填写人": null,
+		"进行中S": 0,
+		"重复问题数S": 0,
+		"线体": null,
+		"车间名称": null,
+		"长期对策": null,
+		"重复问题数": 0
+	}
+            ];
+            console.log('数据加载成功，共', data.length, '条记录');
+            initTable();
+        }
+
+        // 提取问题工位信息
+        function extractWorkstation(description) {
+            if (!description) return '-';
+            // 从事件描述中提取工位信息，如"面板卡和、密封件设备"等
+            const matches = description.match(/([^线]*设备|工位|站点)/);
+            return matches ? matches[0] : '-';
+        }
+
+        // 分类问题类型
+        function classifyProblem(description) {
+            if (!description) return '-';
+            if (description.includes('设备异常') || description.includes('机器人')) return '设备故障';
+            if (description.includes('扫不上号') || description.includes('IT')) return '系统问题';
+            if (description.includes('泡沫异物') || description.includes('面板')) return '品质问题';
+            if (description.includes('停产') || description.includes('影响时间')) return '生产异常';
+            return '其他';
+        }
+
+        // 渲染单行数据
+        function renderRow(item) {
+            const workstation = extractWorkstation(item.事件描述);
+            const problemType = classifyProblem(item.事件描述);
+            
+            return `
+                <tr>
+                    <td>${item.车间名称 || '-'}</td>
+                    <td>${item.线体 || '-'}</td>
+                    <td>${item.发生日期 ? new Date(item.发生日期).toLocaleDateString('zh-CN') : '-'}</td>
+                    <td>${item.当前节点 || '-'}</td>
+                    <td>${workstation}</td>
+                    <td class="description-cell" title="${item.事件描述 || '-'}">${item.事件描述 || '-'}</td>
+                    <td class="description-cell" title="${item.根因分析 || '-'}">${item.根因分析 || '-'}</td>
+                    <td class="description-cell" title="${item.长期对策 || '-'}">${item.长期对策 || '-'}</td>
+                    <td>${item.机型 || '-'}</td>
+                    <td><span class="department-tag">${problemType}</span></td>
+                    <td>-</td>
+                    <td>${item.责任人 || '-'}</td>
+                    <td>-</td>
+                    <td>${item.当前节点处理人 || '-'}</td>
+                </tr>
+            `;
+        }
+
+        // 加载更多数据
+        function loadMoreData() {
+            if (isLoading || !hasMoreData) return;
+            
+            isLoading = true;
+            const tableBody = document.getElementById('tableBody');
+            
+            // 显示加载提示
+            const loadingRow = document.createElement('tr');
+            loadingRow.innerHTML = '<td colspan="14" class="loading-more">正在加载更多数据...</td>';
+            loadingRow.id = 'loading-row';
+            tableBody.appendChild(loadingRow);
+            
+            // 模拟加载延迟
+            setTimeout(() => {
+                // 移除加载提示
+                const loadingElement = document.getElementById('loading-row');
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                
+                // 计算当前页数据
+                const startIndex = currentPage * pageSize;
+                const endIndex = startIndex + pageSize;
+                const pageData = data.slice(startIndex, endIndex);
+                
+                if (pageData.length === 0) {
+                    hasMoreData = false;
+                    const noMoreRow = document.createElement('tr');
+                    noMoreRow.innerHTML = '<td colspan="14" class="no-more-data">没有更多数据了</td>';
+                    tableBody.appendChild(noMoreRow);
+                } else {
+                    // 添加新数据行
+                    pageData.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = renderRow(item).replace('<tr>', '').replace('</tr>', '');
+                        tableBody.appendChild(row);
+                    });
+                    
+                    currentPage++;
+                    
+                    // 检查是否还有更多数据
+                    if (endIndex >= data.length) {
+                        hasMoreData = false;
+                    }
+                }
+                
+                isLoading = false;
+            }, 500); // 500ms延迟模拟网络请求
+        }
+
+        // 初始化表格
+        function initTable() {
+            const tableBody = document.getElementById('tableBody');
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="14" class="no-data">暂无数据</td></tr>';
+                return;
+            }
+            
+            // 清空表格
+            tableBody.innerHTML = '';
+            
+            // 重置分页变量
+            currentPage = 0;
+            hasMoreData = true;
+            isLoading = false;
+            
+            // 加载第一页数据
+            loadMoreData();
+        }
+
+        // 滚动事件监听
+        function handleScroll() {
+            const tableWrapper = document.querySelector('.table-wrapper');
+            const scrollTop = tableWrapper.scrollTop;
+            const scrollHeight = tableWrapper.scrollHeight;
+            const clientHeight = tableWrapper.clientHeight;
+            
+            // 当滚动到底部附近时加载更多数据
+            if (scrollTop + clientHeight >= scrollHeight - 100) {
+                loadMoreData();
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData(); // 直接加载嵌入的数据
+            
+            // 添加滚动事件监听
+            const tableWrapper = document.querySelector('.table-wrapper');
+            tableWrapper.addEventListener('scroll', handleScroll);
+        });
+    </script>
+</body>
+</html>

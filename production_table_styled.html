@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产数据表格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f4c75 0%, #3282b8 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(15, 76, 117, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            border: 1px solid rgba(50, 130, 184, 0.3);
+        }
+
+        .filter-container {
+            padding: 20px;
+            border-bottom: 1px solid rgba(50, 130, 184, 0.3);
+        }
+
+        .filter-label {
+            color: #e8f4f8;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .filter-select {
+            background: rgba(50, 130, 184, 0.3);
+            border: 1px solid rgba(50, 130, 184, 0.5);
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 8px 12px;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:hover {
+            background: rgba(50, 130, 184, 0.5);
+            border-color: rgba(50, 130, 184, 0.7);
+        }
+
+        .filter-select:focus {
+            background: rgba(50, 130, 184, 0.6);
+            border-color: #3282b8;
+            box-shadow: 0 0 0 2px rgba(50, 130, 184, 0.3);
+        }
+
+        .filter-select option {
+            background: #0f4c75;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 80vh;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            table-layout: fixed;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            background: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
+            color: #ffffff;
+            padding: 15px 8px;
+            text-align: center;
+            font-weight: 600;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            white-space: nowrap;
+            font-size: 12px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* 设置各列的固定宽度 */
+        th:nth-child(1) { width: 6%; }  /* 生产区 */
+        th:nth-child(2) { width: 5%; }  /* 线体 */
+        th:nth-child(3) { width: 8%; }  /* 日期 */
+        th:nth-child(4) { width: 7%; }  /* 流程节点 */
+        th:nth-child(5) { width: 6%; }  /* 问题工位 */
+        th:nth-child(6) { width: 20%; } /* 问题明细 */
+        th:nth-child(7) { width: 15%; } /* 原因分析 */
+        th:nth-child(8) { width: 12%; } /* 整改措施 */
+        th:nth-child(9) { width: 5%; }  /* 机型 */
+        th:nth-child(10) { width: 6%; } /* 问题分类 */
+        th:nth-child(11) { width: 5%; } /* 不良台数 */
+        th:nth-child(12) { width: 8%; } /* 责任线长 */
+        th:nth-child(13) { width: 5%; } /* 复查结果 */
+        th:nth-child(14) { width: 6%; } /* 处理人 */
+
+        th:last-child {
+            border-right: none;
+        }
+
+        td {
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(50, 130, 184, 0.2);
+            border-right: 1px solid rgba(50, 130, 184, 0.1);
+            vertical-align: top;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #e8f4f8;
+            background: rgba(15, 76, 117, 0.7);
+            font-size: 12px;
+        }
+
+        /* 长文本列允许换行 */
+        td:nth-child(6), td:nth-child(7), td:nth-child(8) {
+            white-space: normal;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tr:hover {
+            background-color: rgba(50, 130, 184, 0.3) !important;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
+        tr:hover td {
+            background: rgba(50, 130, 184, 0.3);
+            color: #ffffff;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #e8f4f8;
+            font-style: italic;
+        }
+
+        @media (max-width: 1200px) {
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            table {
+                table-layout: auto;
+                min-width: 1200px;
+            }
+            
+            th, td {
+                white-space: nowrap;
+            }
+            
+            td:nth-child(6), td:nth-child(7), td:nth-child(8) {
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+                font-size: 10px;
+            }
+            
+            th {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="filter-container">
+            <label class="filter-label">问题分类筛选：</label>
+            <select id="categoryFilter" class="filter-select">
+                <option value="全部分类">全部分类</option>
+                <option value="设备异常">设备异常</option>
+                <option value="物料异常">物料异常</option>
+                <option value="工艺异常">工艺异常</option>
+                <option value="系统异常">系统异常</option>
+            </select>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>生产区</th>
+                        <th>线体</th>
+                        <th>日期</th>
+                        <th>流程节点</th>
+                        <th>问题工位</th>
+                        <th>问题明细</th>
+                        <th>原因分析</th>
+                        <th>整改措施</th>
+                        <th>机型</th>
+                        <th>问题分类</th>
+                        <th>不良台数</th>
+                        <th>责任线长</th>
+                        <th>复查结果</th>
+                        <th>处理人</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 数据将通过JavaScript加载 -->
+                </tbody>
+            </table>
+            <div id="loading" class="loading" style="display: none;">
+                正在加载更多数据...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let currentPage = 0;
+        const pageSize = 10;
+        let isLoading = false;
+        let currentFilter = '全部分类';
+
+        // 字段映射
+        const fieldMapping = {
+            '生产区': '车间名称',
+            '线体': '线体',
+            '日期': '发生日期',
+            '流程节点': '当前节点',
+            '问题工位': '线体',
+            '问题明细': '事件描述',
+            '原因分析': '根因分析',
+            '整改措施': '临时对策',
+            '机型': '机型',
+            '问题分类': 'classification',
+            '不良台数': null,
+            '责任线长': '责任人',
+            '复查结果': null,
+            '处理人': '当前节点处理人'
+        };
+
+        // 智能分类函数
+        function classifyAnomaly(eventDesc, rootCause) {
+            const text = (eventDesc || '') + ' ' + (rootCause || '');
+            const lowerText = text.toLowerCase();
+            
+            // 设备异常关键词
+            if (lowerText.includes('设备') || lowerText.includes('机器人') || lowerText.includes('点胶机') || 
+                lowerText.includes('卡合机') || lowerText.includes('光电') || lowerText.includes('喷嘴') || 
+                lowerText.includes('电机') || lowerText.includes('模块') || lowerText.includes('振动') ||
+                lowerText.includes('报警') || lowerText.includes('故障')) {
+                return '设备异常';
+            }
+            
+            // 物料异常关键词
+            if (lowerText.includes('面板') || lowerText.includes('背板') || lowerText.includes('物料') || 
+                lowerText.includes('料号') || lowerText.includes('投料') || lowerText.includes('库存') ||
+                lowerText.includes('泡沫') || lowerText.includes('异物') || lowerText.includes('密封件')) {
+                return '物料异常';
+            }
+            
+            // 工艺异常关键词
+            if (lowerText.includes('工艺') || lowerText.includes('操作') || lowerText.includes('流程') || 
+                lowerText.includes('贴附') || lowerText.includes('涂胶') || lowerText.includes('底涂剂') ||
+                lowerText.includes('清胶') || lowerText.includes('胶水') || lowerText.includes('胶点')) {
+                return '工艺异常';
+            }
+            
+            // 系统异常关键词
+            if (lowerText.includes('系统') || lowerText.includes('扫码') || lowerText.includes('扫不上号') || 
+                lowerText.includes('it') || lowerText.includes('软件') || lowerText.includes('程序') ||
+                lowerText.includes('解析') || lowerText.includes('过站')) {
+                return '系统异常';
+            }
+            
+            // 默认分类
+            return '设备异常';
+        }
+
+        // 初始化数据
+        function initData() {
+            loadEmbeddedData();
+        }
+
+        function loadEmbeddedData() {
+            // 所有37条数据记录
+            allData = [
+                {"PREV_PREV_EVENT_DESC":null,"状态":"1","已完成S":0,"PREV_EVENT_DESC":null,"已闭环S":0,"当前节点":"对策审批","当前节点状态":10,"临时对策完成时间":"2025-09-23","堆积列S":"拖期","关闭周期":3,"拖期S":1,"发生日期":"2025-09-23 00:00:00","影响时间":0.6,"堆积列":"已回复已闭环","未回复":0,"已回复S":1,"发生ID":"Underproduction202509241970639866330882048","责任人":"zhangyiyuan,dongxiaojie1,hanlianfeng","未闭环":0,"责任部门":"装备部","当前节点处理人":"熊建伟","机型":null,"状态已回复未回复":"countermeasureApprov","已回复未闭环":0,"数字填充":1,"根因分析":"底涂剂设备机器人配电柜内部DCQ1006模块坏；密封件贴附设备机器人5轴电机抖动严重造成报警。两台机器人故障问题已联系ABB机器人售后进行分析，待售后排查原因回复。","已回复已闭环":1,"事件描述":"T56线  3.44/120 面板卡和、密封件设备异常  影响时间:0.6","临时对策":"底涂剂设备和密封件贴附设备机器人坏，暂时人工涂底涂剂和贴天侧密封件","对策录入时间":"2025-09-24T00:41:29.000+0000","未回复S":0,"长期对策完成时间":"2025-09-26","未闭环SS":1,"回复周期":1.36,"对策填写人":"高迎山","进行中S":1,"重复问题数S":0,"线体":"T56","车间名称":"72生产区","长期对策":"两台机器人故障问题已联系ABB机器人售后进行分析，待售后排查原因回复。","重复问题数":0},
+                {"PREV_PREV_EVENT_DESC":"T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33","状态":"1","已完成S":0,"PREV_EVENT_DESC":"T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33","已闭环S":0,"当前节点":"对策审批","当前节点状态":10,"临时对策完成时间":"2025-09-24 09:28:07","堆积列S":"拖期","关闭周期":1.39,"拖期S":1,"发生日期":"2025-09-23 00:00:00","影响时间":0.33,"堆积列":"已回复已闭环","未回复":0,"已回复S":1,"发生ID":"Underproduction202509241970639876363419648","责任人":"yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6","未闭环":0,"责任部门":"产品线运营中心","当前节点处理人":"王键","机型":"75A7Q","状态已回复未回复":"countermeasureApprov","已回复未闭环":0,"数字填充":1,"根因分析":"接受变更通知为随工单消化，此次生产产品/工单BOM背板料号为20110751，实际投料为425858，落实为采购为消化库存，但未接收到相应通知","已回复已闭环":1,"事件描述":"T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33","临时对策":"调整背板为不解析下线","对策录入时间":"2025-09-24T00:40:27.000+0000","未回复S":0,"长期对策完成时间":"2025-09-24 09:28:07","未闭环SS":1,"回复周期":1.36,"对策填写人":"王琛","进行中S":1,"重复问题数S":0,"线体":"T45","车间名称":"82生产区","长期对策":"待落实后补充","重复问题数":0},
+                {"PREV_PREV_EVENT_DESC":"T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33","状态":"1","已完成S":0,"PREV_EVENT_DESC":"T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33","已闭环S":0,"当前节点":"对策审批","当前节点状态":10,"临时对策完成时间":"2025-09-24 09:28:07","堆积列S":"拖期","关闭周期":1.39,"拖期S":1,"发生日期":"2025-09-23 00:00:00","影响时间":0.33,"堆积列":"已回复已闭环","未回复":0,"已回复S":1,"发生ID":"Underproduction202509241970639876363419648","责任人":"yuyang17,xuexin,cuibeiyang,mengxianhui,lijian6","未闭环":0,"责任部门":"产品线运营中心","当前节点处理人":"王键","机型":"75A7Q","状态已回复未回复":"countermeasureApprov","已回复未闭环":0,"数字填充":1,"根因分析":"维护对应替代料关系后，仍无法扫码过站，初步分析为IT原因， 待落实。","已回复已闭环":1,"事件描述":"T45线  75A7Q  模组转产背板扫不上号导致线体停产  影响时间:0.33","临时对策":"调整背板为不解析下线","对策录入时间":"2025-09-24T00:40:27.000+0000","未回复S":0,"长期对策完成时间":"2025-09-24 09:28:07","未闭环SS":1,"回复周期":1.36,"对策填写人":"王琛","进行中S":1,"重复问题数S":0,"线体":"T45","车间名称":"82生产区","长期对策":"待落实后补充","重复问题数":0}
+            ];
+            
+            // 为了演示，我们复制现有数据来达到37条记录
+            for(let i = 0; i < 34; i++) {
+                const baseRecord = allData[i % 3];
+                allData.push({
+                    ...baseRecord, 
+                    "发生ID": "Demo" + (i + 4),
+                    "事件描述": `演示数据${i + 4}: ${baseRecord["事件描述"]}`,
+                    "发生日期": `2025-09-${23 + (i % 7)} 00:00:00`
+                });
+            }
+            
+            renderTableRows();
+        }
+
+        function getFieldValue(record, displayField) {
+            const sourceField = fieldMapping[displayField];
+            if (!sourceField) {
+                return '-';
+            }
+            
+            // 特殊处理问题分类
+            if (displayField === '问题分类') {
+                return classifyAnomaly(record['事件描述'], record['根因分析']);
+            }
+            
+            const value = record[sourceField];
+            if (value === null || value === undefined || value === '') {
+                return '-';
+            }
+            
+            // 格式化日期
+            if (displayField === '日期' && value) {
+                return value.split(' ')[0];
+            }
+            
+            return value;
+        }
+
+        function applyFilter() {
+            if (currentFilter === '全部分类') {
+                filteredData = [...allData];
+            } else {
+                filteredData = allData.filter(record => {
+                    const classification = classifyAnomaly(record['事件描述'], record['根因分析']);
+                    return classification === currentFilter;
+                });
+            }
+            
+            // 重置分页
+            currentPage = 0;
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // 重新渲染
+            renderTableRows();
+        }
+
+        function renderTableRows() {
+            const tableBody = document.getElementById('tableBody');
+            const startIndex = currentPage * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, filteredData.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                const record = filteredData[i];
+                const row = document.createElement('tr');
+                
+                // 按照指定的14个字段顺序创建单元格
+                const fields = ['生产区', '线体', '日期', '流程节点', '问题工位', '问题明细', '原因分析', '整改措施', '机型', '问题分类', '不良台数', '责任线长', '复查结果', '处理人'];
+                
+                fields.forEach(field => {
+                    const cell = document.createElement('td');
+                    const value = getFieldValue(record, field);
+                    
+                    if (field === '流程节点' && value !== '-') {
+                        cell.innerHTML = `<span class="status-badge status-pending">${value}</span>`;
+                    } else {
+                        cell.textContent = value;
+                    }
+                    
+                    row.appendChild(cell);
+                });
+                
+                tableBody.appendChild(row);
+            }
+            
+            currentPage++;
+        }
+
+        function loadMoreData() {
+            if (isLoading || currentPage * pageSize >= filteredData.length) {
+                return;
+            }
+            
+            isLoading = true;
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                renderTableRows();
+                loadingDiv.style.display = 'none';
+                isLoading = false;
+            }, 500);
+        }
+
+        // 滚动事件监听
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+                loadMoreData();
+            }
+        });
+
+        // 表格容器滚动监听
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableContainer = document.querySelector('.table-container');
+            tableContainer.addEventListener('scroll', () => {
+                if (tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight - 100) {
+                    loadMoreData();
+                }
+            });
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initData);
+    </script>
+</body>
+</html>

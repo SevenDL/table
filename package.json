@@ -11,9 +11,15 @@
     "node": ">=14.0.0"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "@jixo/mcp-git": "^4.0.0",
+    "express": "^4.18.2",
+    "mcp-git": "^0.0.4"
   },
-  "keywords": ["api", "city", "express"],
+  "keywords": [
+    "api",
+    "city",
+    "express"
+  ],
   "author": "",
   "license": "MIT"
 }
