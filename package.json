@@ -1,0 +1,19 @@
+{
+  "name": "city-api",
+  "version": "1.0.0",
+  "description": "城市分类API服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "keywords": ["api", "city", "express"],
+  "author": "",
+  "license": "MIT"
+}
